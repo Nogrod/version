@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Version;
 
 use JsonSerializable;
+use Serializable;
 use Version\Extension\Build;
 use Version\Extension\NoBuild;
 use Version\Extension\NoPreRelease;
@@ -18,7 +19,7 @@ use Version\Extension\PreRelease;
 /**
  * @author Nikola Posa <posa.nikola@gmail.com>
  */
-class Version implements JsonSerializable
+class Version implements JsonSerializable, Serializable
 {
     /**
      * @var int
@@ -310,5 +311,35 @@ class Version implements JsonSerializable
         }
 
         return $comparator;
+    }
+
+    /**
+     * String representation of object
+     * @link https://php.net/manual/en/serializable.serialize.php
+     * @return string the string representation of the object or null
+     * @since 5.1.0
+     */
+    public function serialize()
+    {
+        return $this->getVersionString();
+    }
+
+    /**
+     * Constructs the object
+     * @link https://php.net/manual/en/serializable.unserialize.php
+     * @param string $serialized <p>
+     * The string representation of the object.
+     * </p>
+     * @return void
+     * @since 5.1.0
+     */
+    public function unserialize($serialized)
+    {
+        $version = static::fromString($serialized);
+        $this->major = $version->getMajor();
+        $this->minor = $version->getMinor();
+        $this->patch = $version->getPatch();
+        $this->preRelease = $version->getPreRelease();
+        $this->build = $version->getBuild();
     }
 }
