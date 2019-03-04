@@ -11,6 +11,7 @@
 
 namespace Version;
 
+use Serializable;
 use JsonSerializable;
 use Version\Metadata\PreRelease;
 use Version\Metadata\Build;
@@ -24,7 +25,7 @@ use Version\Constraint\Constraint;
 /**
  * @author Nikola Posa <posa.nikola@gmail.com>
  */
-final class Version implements JsonSerializable
+final class Version implements JsonSerializable, Serializable
 {
     /**
      * @var int
@@ -56,13 +57,19 @@ final class Version implements JsonSerializable
      */
     private static $comparator;
 
-    private function __construct($major, $minor, $patch, PreRelease $preRelease, Build $build)
+    public function __construct() {
+
+    }
+
+    private static function create($major, $minor, $patch, PreRelease $preRelease, Build $build)
     {
-        $this->major = $major;
-        $this->minor = $minor;
-        $this->patch = $patch;
-        $this->preRelease = $preRelease;
-        $this->build = $build;
+        $instance = new self();
+        $instance->major = $major;
+        $instance->minor = $minor;
+        $instance->patch = $patch;
+        $instance->preRelease = $preRelease;
+        $instance->build = $build;
+        return $instance;
     }
 
     /**
@@ -89,7 +96,7 @@ final class Version implements JsonSerializable
             $build = Build::create($build);
         }
 
-        return new self($major, $minor, $patch, $preRelease, $build);
+        return self::create($major, $minor, $patch, $preRelease, $build);
     }
 
     private static function validateVersionElement($element, $value)
@@ -427,5 +434,35 @@ final class Version implements JsonSerializable
             'preRelease' => $this->preRelease->toArray(),
             'build' => $this->build->toArray(),
         ];
+    }
+
+    /**
+     * String representation of object
+     * @link https://php.net/manual/en/serializable.serialize.php
+     * @return string the string representation of the object or null
+     * @since 5.1.0
+     */
+    public function serialize()
+    {
+        return $this->getVersionString();
+    }
+
+    /**
+     * Constructs the object
+     * @link https://php.net/manual/en/serializable.unserialize.php
+     * @param string $serialized <p>
+     * The string representation of the object.
+     * </p>
+     * @return void
+     * @since 5.1.0
+     */
+    public function unserialize($serialized)
+    {
+        $version = static::fromString($serialized);
+        $this->major = $version->getMajor();
+        $this->minor = $version->getMinor();
+        $this->patch = $version->getPatch();
+        $this->preRelease = $version->getPreRelease();
+        $this->build = $version->getBuild();
     }
 }
